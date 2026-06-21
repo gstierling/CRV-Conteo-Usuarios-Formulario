@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>CRV · Conteos por Jornada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117;
+    --bg-elev:#151b23;
+    --bg-card:#1a212c;
+    --bg-card-hover:#1f2733;
+    --border:#2a3340;
+    --border-soft:#212a36;
+    --orange:#f97316;
+    --orange-dim:#7c3d10;
+    --orange-soft:rgba(249,115,22,0.12);
+    --teal:#00d4aa;
+    --teal-dim:#0a5446;
+    --teal-soft:rgba(0,212,170,0.12);
+    --amber:#fbbf24;
+    --amber-soft:rgba(251,191,36,0.12);
+    --text:#f0f3f7;
+    --text-dim:#8b96a5;
+    --text-faint:#5b6675;
+    --green:#34d399;
+    --red:#f87171;
+    --radius:16px;
+    --radius-sm:10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(900px 500px at 50% -10%, rgba(249,115,22,0.08), transparent 60%),
+      radial-gradient(700px 400px at 100% 0%, rgba(0,212,170,0.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Nunito Sans','Nunito',-apple-system,sans-serif;
+    min-height:100vh;
+    padding-bottom:140px;
+  }
+
+  /* ---------- TOP PROGRESS BAR (sticky) ---------- */
+  .track{
+    position:sticky; top:0; z-index:50;
+    background:rgba(13,17,23,0.92);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--border-soft);
+    padding:10px 16px 12px;
+  }
+  .track-top{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .track-brand{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Nunito',sans-serif; font-weight:900;
+    font-size:13px; letter-spacing:0.04em; color:var(--text);
+  }
+  .track-brand .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--orange);
+    box-shadow:0 0 0 3px var(--orange-soft);
+  }
+  .track-pct{
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:13px;
+    color:var(--teal); font-variant-numeric:tabular-nums;
+  }
+  .track-bar{
+    height:6px; border-radius:99px; background:var(--bg-card);
+    border:1px solid var(--border-soft);
+    overflow:hidden;
+    position:relative;
+  }
+  .track-fill{
+    height:100%; border-radius:99px;
+    background:linear-gradient(90deg, var(--orange), var(--teal));
+    width:0%;
+    transition:width .45s cubic-bezier(.4,0,.2,1);
+  }
+  .track-stops{
+    display:flex; justify-content:space-between;
+    margin-top:6px; padding:0 1px;
+  }
+  .track-stop{
+    width:5px; height:5px; border-radius:50%;
+    background:var(--border);
+    transition:background .3s, transform .3s;
+  }
+  .track-stop.done{ background:var(--teal); transform:scale(1.3); }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:28px 20px 8px;
+    max-width:560px; margin:0 auto;
+  }
+  .hero-eyebrow{
+    display:inline-flex; align-items:center; gap:6px;
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:11px;
+    letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--orange);
+    background:var(--orange-soft);
+    border:1px solid rgba(249,115,22,0.3);
+    padding:5px 10px; border-radius:99px;
+    margin-bottom:14px;
+  }
+  .hero h1{
+    font-family:'Nunito',sans-serif; font-weight:900;
+    font-size:30px; line-height:1.12; margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+  .hero h1 span{ color:var(--teal); }
+  .hero p{
+    color:var(--text-dim); font-size:14.5px; line-height:1.55;
+    margin:0; max-width:46ch;
+  }
+
+  /* ---------- SECTION WRAPPER ---------- */
+  .wrap{ max-width:560px; margin:0 auto; padding:0 20px; }
+  .section{ margin-top:30px; }
+  .section-head{
+    display:flex; align-items:baseline; gap:10px;
+    margin-bottom:14px;
+  }
+  .section-num{
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:13px;
+    color:var(--bg); background:var(--text-faint);
+    width:22px; height:22px; border-radius:7px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .section-head.active .section-num{ background:var(--orange); color:#1a0c00; }
+  .section-title{
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:16px;
+    color:var(--text);
+  }
+  .section-sub{
+    font-size:13px; color:var(--text-faint); margin:-8px 0 16px 32px;
+    line-height:1.5;
+  }
+
+  /* ---------- FIELD CARD (single field) ---------- */
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    margin-bottom:12px;
+    transition:border-color .2s, background .2s;
+  }
+  .card.filled{ border-color:rgba(0,212,170,0.35); }
+  .card.required.empty.touched{ border-color:rgba(248,113,113,0.5); }
+
+  .label{
+    display:flex; align-items:center; gap:7px;
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:13.5px;
+    color:var(--text); margin-bottom:10px;
+  }
+  .label .req{ color:var(--orange); font-weight:900; }
+  .label .opt-tag{
+    font-size:10px; font-weight:700; color:var(--text-faint);
+    background:var(--bg-elev); padding:2px 7px; border-radius:99px;
+    text-transform:uppercase; letter-spacing:0.04em;
+  }
+
+  input[type="text"], textarea, input[type="number"]{
+    width:100%;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    color:var(--text);
+    font-family:'Nunito Sans',sans-serif;
+    font-size:16px;
+    padding:13px 14px;
+    outline:none;
+    transition:border-color .15s, background .15s;
+  }
+  input::placeholder, textarea::placeholder{ color:var(--text-faint); }
+  input:focus, textarea:focus{
+    border-color:var(--teal);
+    background:var(--bg-card-hover);
+  }
+  textarea{ resize:vertical; min-height:72px; line-height:1.5; font-size:15px; }
+
+  /* date row */
+  .date-row{ display:flex; gap:8px; }
+  .date-row select{
+    flex:1; background:var(--bg-elev); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text);
+    font-family:'Nunito Sans',sans-serif; font-size:15px;
+    padding:13px 10px; outline:none; appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%238b96a5' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+  }
+  .date-row select:focus{ border-color:var(--teal); }
+
+  /* ---------- CIRCUITO CHIPS ---------- */
+  .chip-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  }
+  .chip{
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:14px 12px;
+    text-align:left;
+    color:var(--text-dim);
+    font-family:'Nunito',sans-serif; font-weight:700; font-size:14px;
+    cursor:pointer;
+    display:flex; align-items:center; gap:10px;
+    transition:all .15s;
+  }
+  .chip .ring{
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid var(--border);
+    flex-shrink:0;
+    transition:all .15s;
+    position:relative;
+  }
+  .chip.sel{
+    background:var(--orange-soft);
+    border-color:var(--orange);
+    color:var(--text);
+  }
+  .chip.sel .ring{
+    border-color:var(--orange);
+    background:var(--orange);
+    box-shadow:inset 0 0 0 3px var(--orange-soft);
+  }
+  .chip:active{ transform:scale(0.98); }
+
+  /* ---------- TIME SLOT CARDS (the count blocks) ---------- */
+  .slot{
+    background:var(--bg-card);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius);
+    padding:16px 18px 18px;
+    margin-bottom:14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .slot::before{
+    content:'';
+    position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:var(--border);
+    transition:background .25s;
+  }
+  .slot.complete::before{ background:var(--teal); }
+  .slot.lobarnechea{ }
+  .slot-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .slot-time{
+    display:flex; align-items:center; gap:10px;
+  }
+  .slot-clock{
+    width:34px; height:34px; border-radius:10px;
+    background:var(--bg-elev);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .slot-clock svg{ width:17px; height:17px; }
+  .slot-time-text{ display:flex; flex-direction:column; }
+  .slot-time-text .h{
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:15px;
+    color:var(--text);
+  }
+  .slot-time-text .h .req{ color:var(--orange); margin-left:2px; }
+  .slot-time-text .s{
+    font-size:11px; color:var(--text-faint);
+  }
+  .slot-check{
+    width:22px; height:22px; border-radius:50%;
+    border:1.5px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    transition:all .2s;
+  }
+  .slot.complete .slot-check{
+    background:var(--teal); border-color:var(--teal);
+  }
+  .slot.complete .slot-check svg{ display:block; }
+  .slot-check svg{ display:none; width:12px; height:12px; }
+
+  .count-row{ display:flex; gap:10px; }
+  .count-field{ flex:1; }
+  .count-field-label{
+    display:flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:700; color:var(--text-dim);
+    margin-bottom:6px; text-transform:uppercase; letter-spacing:0.03em;
+  }
+  .count-field-label .sw{
+    width:9px; height:9px; border-radius:3px;
+  }
+  .sw.m{ background:var(--orange); }
+  .sw.w{ background:var(--teal); }
+
+  .stepper{
+    display:flex; align-items:stretch;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    overflow:hidden;
+    transition:border-color .15s;
+  }
+  .count-field.has-value .stepper{ border-color:rgba(0,212,170,0.4); }
+  .stepper button{
+    width:38px; flex-shrink:0;
+    background:transparent; border:none;
+    color:var(--text-dim);
+    font-size:18px; font-weight:700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .12s, color .12s;
+    font-family:'Nunito',sans-serif;
+  }
+  .stepper button:active{ background:rgba(255,255,255,0.06); color:var(--text); }
+  .stepper input{
+    flex:1; min-width:0;
+    background:transparent; border:none; outline:none;
+    text-align:center; color:var(--text);
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:18px;
+    font-variant-numeric:tabular-nums;
+    padding:9px 2px;
+    -moz-appearance:textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .stepper input::placeholder{ color:var(--text-faint); font-weight:600; }
+
+  /* optional badge for 5) Lo Barnechea */
+  .opt-pill{
+    font-size:10px; font-weight:800; color:var(--amber);
+    background:var(--amber-soft); padding:3px 8px; border-radius:99px;
+    text-transform:uppercase; letter-spacing:0.03em;
+  }
+
+  /* ---------- COMPARISON SCALE ---------- */
+  .scale{
+    display:flex; gap:6px;
+  }
+  .scale-opt{
+    flex:1;
+    background:var(--bg-elev);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
+    padding:12px 4px 10px;
+    text-align:center;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .scale-opt svg{ width:18px; height:18px; margin:0 auto 6px; display:block; }
+  .scale-opt .t{
+    font-size:10.5px; font-weight:700; color:var(--text-dim);
+    line-height:1.2;
+  }
+  .scale-opt.sel{
+    background:var(--orange-soft);
+    border-color:var(--orange);
+  }
+  .scale-opt.sel .t{ color:var(--text); }
+  .scale-opt:active{ transform:scale(0.96); }
+
+  /* ---------- SUMMARY STRIP ---------- */
+  .summary{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;
+    margin-top:6px; margin-bottom:30px;
+  }
+  .sum-card{
+    background:var(--bg-card);
+    border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm);
+    padding:12px 10px;
+    text-align:center;
+  }
+  .sum-card .n{
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:22px;
+    font-variant-numeric:tabular-nums;
+  }
+  .sum-card.m .n{ color:var(--orange); }
+  .sum-card.w .n{ color:var(--teal); }
+  .sum-card.t .n{ color:var(--text); }
+  .sum-card .l{
+    font-size:10px; color:var(--text-faint); font-weight:700;
+    text-transform:uppercase; letter-spacing:0.04em; margin-top:2px;
+  }
+
+  /* ---------- SUBMIT BAR ---------- */
+  .submit-zone{ margin-top:34px; margin-bottom:8px; }
+  .help-text{
+    font-size:12.5px; color:var(--text-faint); text-align:center;
+    margin-top:10px; line-height:1.5;
+  }
+  .btn-submit{
+    width:100%;
+    background:linear-gradient(135deg, var(--orange), #ea580c);
+    border:none; border-radius:var(--radius);
+    color:#1a0c00;
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:16px;
+    padding:17px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:transform .12s, opacity .2s;
+  }
+  .btn-submit:active{ transform:scale(0.985); }
+  .btn-submit:disabled{
+    opacity:0.4; cursor:not-allowed;
+  }
+  .btn-submit svg{ width:18px; height:18px; }
+
+  /* footer */
+  .foot{
+    text-align:center; margin-top:26px;
+    font-size:11.5px; color:var(--text-faint);
+    padding-bottom:10px;
+  }
+  .foot .brand{ color:var(--text-dim); font-weight:700; }
+
+  /* ---------- DONE STATE ---------- */
+  .done-screen{
+    display:none;
+    max-width:480px; margin:0 auto; padding:80px 24px;
+    text-align:center;
+  }
+  .done-screen.show{ display:block; }
+  .done-icon{
+    width:72px; height:72px; border-radius:50%;
+    background:var(--teal-soft); border:1px solid rgba(0,212,170,0.4);
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 22px;
+  }
+  .done-icon svg{ width:32px; height:32px; }
+  .done-screen h2{
+    font-family:'Nunito',sans-serif; font-weight:900; font-size:22px;
+    margin:0 0 10px;
+  }
+  .done-screen p{ color:var(--text-dim); font-size:14.5px; line-height:1.6; margin:0 0 26px; }
+  .btn-secondary{
+    background:var(--bg-card); border:1px solid var(--border);
+    color:var(--text); font-family:'Nunito',sans-serif; font-weight:700;
+    font-size:14px; padding:12px 22px; border-radius:var(--radius-sm);
+    cursor:pointer;
+  }
+
+  @media (min-width:560px){
+    .hero h1{ font-size:34px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; scroll-behavior:auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="track" id="trackBar">
+  <div class="track-top">
+    <div class="track-brand"><span class="dot"></span>CRV · CONTEOS</div>
+    <div class="track-pct" id="trackPct">0%</div>
+  </div>
+  <div class="track-bar"><div class="track-fill" id="trackFill"></div></div>
+  <div class="track-stops" id="trackStops"></div>
+</div>
+
+<div id="formScreen">
+
+  <div class="hero">
+    <div class="hero-eyebrow">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Vigía de conteo
+    </div>
+    <h1>Conteos por <span>jornada</span></h1>
+    <p>Registra las cifras de tu punto cada hora. Toma menos de 2 minutos llenarlo completo, vuelta a vuelta.</p>
+  </div>
+
+  <div class="wrap">
+
+    <!-- SECTION 1: IDENTIFICACIÓN -->
+    <div class="section">
+      <div class="section-head active">
+        <div class="section-num">1</div>
+        <div class="section-title">¿Quién y cuándo?</div>
+      </div>
+
+      <div class="card" id="card-nombre">
+        <div class="label">Nombre de quien llena este formulario <span class="req">*</span></div>
+        <input type="text" id="nombre" placeholder="Ej: Camila León" autocomplete="name">
+      </div>
+
+      <div class="card" id="card-fecha">
+        <div class="label">Fecha del conteo <span class="req">*</span></div>
+        <div class="date-row">
+          <select id="dia"><option value="">Día</option></select>
+          <select id="mes"><option value="">Mes</option></select>
+          <select id="anio"><option value="">Año</option></select>
+        </div>
+      </div>
+
+      <div class="card" id="card-circuito">
+        <div class="label">CicloRecreoVía en que se tomó el conteo <span class="req">*</span></div>
+        <div class="chip-grid" id="circuitoGrid">
+          <button type="button" class="chip" data-val="Vitacura"><span class="ring"></span>Vitacura</button>
+          <button type="button" class="chip" data-val="Las Condes"><span class="ring"></span>Las Condes</button>
+          <button type="button" class="chip" data-val="Providencia 1"><span class="ring"></span>Providencia 1</button>
+          <button type="button" class="chip" data-val="Providencia 2"><span class="ring"></span>Providencia 2</button>
+          <button type="button" class="chip" data-val="Ñuñoa"><span class="ring"></span>Ñuñoa</button>
+          <button type="button" class="chip" data-val="Lo Barnechea"><span class="ring"></span>Lo Barnechea</button>
+          <button type="button" class="chip" data-val="Viña del Mar" style="grid-column:1/-1;"><span class="ring"></span>Viña del Mar</button>
+        </div>
+      </div>
+
+      <div class="card" id="card-punto">
+        <div class="label">Esquina o punto en que se tomó el conteo <span class="req">*</span></div>
+        <input type="text" id="punto" placeholder="Ej: Av. Vitacura esquina Bicentenario">
+      </div>
+    </div>
+
+    <!-- SECTION 2: CONTEOS -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">2</div>
+        <div class="section-title">Conteos por horario</div>
+      </div>
+      <div class="section-sub">Ingresa hombres y mujeres contados en cada bloque de 10 minutos.</div>
+
+      <div class="slot" id="slot-5" data-required="false">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">8.00 – 8.10 hrs</span>
+              <span class="s">Solo Lo Barnechea</span>
+            </div>
+          </div>
+          <span class="opt-pill">Opcional</span>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" id="slot-5a" data-required="true">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">9.00 – 9.10 hrs<span class="req">*</span></span>
+            </div>
+          </div>
+          <div class="slot-check"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5a">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5a">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" id="slot-5b" data-required="true">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">10.00 – 10.10 hrs<span class="req">*</span></span>
+            </div>
+          </div>
+          <div class="slot-check"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5b">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5b">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" id="slot-5c" data-required="true">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">11.00 – 11.10 hrs<span class="req">*</span></span>
+            </div>
+          </div>
+          <div class="slot-check"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5c">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5c">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" id="slot-5d" data-required="true">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">12.00 – 12.10 hrs<span class="req">*</span></span>
+            </div>
+          </div>
+          <div class="slot-check"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5d">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5d">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" id="slot-5e" data-required="true">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">13.00 – 13.10 hrs<span class="req">*</span></span>
+            </div>
+          </div>
+          <div class="slot-check"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5e">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5e">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="slot" id="slot-5f" data-required="true">
+        <div class="slot-head">
+          <div class="slot-time">
+            <div class="slot-clock"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="slot-time-text">
+              <span class="h">13.50 – 14.00 hrs<span class="req">*</span></span>
+            </div>
+          </div>
+          <div class="slot-check"><svg viewBox="0 0 24 24" fill="none" stroke="#0d1117" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+        </div>
+        <div class="count-row">
+          <div class="count-field" data-key="hombres_5f">
+            <div class="count-field-label"><span class="sw m"></span>Hombres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+          <div class="count-field" data-key="mujeres_5f">
+            <div class="count-field-label"><span class="sw w"></span>Mujeres</div>
+            <div class="stepper">
+              <button type="button" class="dec">−</button>
+              <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0">
+              <button type="button" class="inc">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="sum-card m"><div class="n" id="sumHombres">0</div><div class="l">Hombres</div></div>
+        <div class="sum-card w"><div class="n" id="sumMujeres">0</div><div class="l">Mujeres</div></div>
+        <div class="sum-card t"><div class="n" id="sumTotal">0</div><div class="l">Total jornada</div></div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: COMPARATIVA -->
+    <div class="section">
+      <div class="section-head">
+        <div class="section-num">3</div>
+        <div class="section-title">¿Cómo estuvo hoy?</div>
+      </div>
+      <div class="section-sub">Compara con la jornada anterior — si no asististe, pregunta a quien sí estuvo.</div>
+
+      <div class="card" id="card-comparativa">
+        <div class="label">Asistencia comparada con la jornada anterior <span class="req">*</span></div>
+        <div class="scale" id="scaleGrid">
+          <button type="button" class="scale-opt" data-val="Mucho menor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.2"><path d="M19 17L5 7M5 7v8M5 7h8"/></svg>
+            <span class="t">Mucho<br>menor</span>
+          </button>
+          <button type="button" class="scale-opt" data-val="Menor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2.2"><path d="M18 16L6 8"/><path d="M6 8v6M6 8h6"/></svg>
+            <span class="t">Menor</span>
+          </button>
+          <button type="button" class="scale-opt" data-val="Parecida">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2.2"><path d="M5 12h14"/></svg>
+            <span class="t">Parecida</span>
+          </button>
+          <button type="button" class="scale-opt" data-val="Mayor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#a3e635" stroke-width="2.2"><path d="M6 16l12-8"/><path d="M18 14V8h-6"/></svg>
+            <span class="t">Mayor</span>
+          </button>
+          <button type="button" class="scale-opt" data-val="Mucho mayor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2.2"><path d="M5 19L19 5"/><path d="M11 5h8v8"/></svg>
+            <span class="t">Mucho<br>mayor</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">¿Algún aspecto relevante que haya influido en algún horario? <span class="opt-tag">Opcional</span></div>
+        <textarea id="aspecto" placeholder="Ej: lluvia entre 11 y 12 hrs, corte de calle, evento paralelo..."></textarea>
+      </div>
+
+      <div class="card">
+        <div class="label">¿Algún comentario? <span class="opt-tag">Opcional</span></div>
+        <textarea id="comentario" placeholder="Cuéntanos lo que necesites..."></textarea>
+      </div>
+    </div>
+
+    <div class="submit-zone">
+      <button type="button" class="btn-submit" id="btnSubmit" disabled>
+        Enviar conteo
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <div class="help-text" id="helpText">Completa los campos marcados con * para enviar</div>
+    </div>
+
+    <div class="foot">Formulario de campo de <span class="brand">CicloRecreoVía</span> · 20 años conectando la ciudad</div>
+
+  </div>
+</div>
+
+<div class="done-screen" id="doneScreen">
+  <div class="done-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#00d4aa" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg></div>
+  <h2>¡Conteo registrado!</h2>
+  <p>Gracias por tu trabajo en terreno. Tus cifras ya quedaron guardadas para esta jornada.</p>
+  <button type="button" class="btn-secondary" id="btnAnother">Registrar otro conteo</button>
+</div>
+
+<script>
+(function(){
+  // ---- date selects ----
+  var diaSel = document.getElementById('dia');
+  var mesSel = document.getElementById('mes');
+  var anioSel = document.getElementById('anio');
+  for(var d=1; d<=31; d++){
+    var o = document.createElement('option'); o.value=d; o.textContent=d; diaSel.appendChild(o);
+  }
+  var meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  meses.forEach(function(m, i){
+    var o = document.createElement('option'); o.value=i+1; o.textContent=m; mesSel.appendChild(o);
+  });
+  var thisYear = new Date().getFullYear();
+  for(var y=thisYear; y>=thisYear-1; y--){
+    var o = document.createElement('option'); o.value=y; o.textContent=y; anioSel.appendChild(o);
+  }
+  // default to today
+  var today = new Date();
+  diaSel.value = today.getDate();
+  mesSel.value = today.getMonth()+1;
+  anioSel.value = today.getFullYear();
+
+  // ---- circuito chips ----
+  var circuitoVal = '';
+  var grid = document.getElementById('circuitoGrid');
+  grid.querySelectorAll('.chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      grid.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('sel'); });
+      chip.classList.add('sel');
+      circuitoVal = chip.dataset.val;
+      toggleLoBarnechea();
+      update();
+    });
+  });
+
+  function toggleLoBarnechea(){
+    var slot5 = document.getElementById('slot-5');
+    if(circuitoVal === 'Lo Barnechea'){
+      slot5.style.display = '';
+    } else {
+      slot5.style.display = 'none';
+    }
+  }
+  toggleLoBarnechea();
+
+  // ---- comparativa scale ----
+  var comparativaVal = '';
+  var scaleGrid = document.getElementById('scaleGrid');
+  scaleGrid.querySelectorAll('.scale-opt').forEach(function(opt){
+    opt.addEventListener('click', function(){
+      scaleGrid.querySelectorAll('.scale-opt').forEach(function(o){ o.classList.remove('sel'); });
+      opt.classList.add('sel');
+      comparativaVal = opt.dataset.val;
+      update();
+    });
+  });
+
+  // ---- steppers ----
+  document.querySelectorAll('.count-field').forEach(function(field){
+    var input = field.querySelector('input');
+    var dec = field.querySelector('.dec');
+    var inc = field.querySelector('.inc');
+
+    function setVal(v){
+      v = Math.max(0, parseInt(v) || 0);
+      input.value = v > 0 ? v : '';
+      field.classList.toggle('has-value', v > 0 || input.dataset.touched === '1');
+      checkSlotComplete(field.closest('.slot'));
+      update();
+    }
+    dec.addEventListener('click', function(){
+      input.dataset.touched = '1';
+      setVal((parseInt(input.value)||0) - 1);
+    });
+    inc.addEventListener('click', function(){
+      input.dataset.touched = '1';
+      setVal((parseInt(input.value)||0) + 1);
+    });
+    input.addEventListener('input', function(){
+      input.dataset.touched = '1';
+      input.value = input.value.replace(/[^0-9]/g,'');
+      checkSlotComplete(field.closest('.slot'));
+      update();
+    });
+  });
+
+  function checkSlotComplete(slot){
+    if(!slot) return;
+    var inputs = slot.querySelectorAll('.stepper input');
+    var allFilled = true;
+    inputs.forEach(function(inp){
+      if(inp.dataset.touched !== '1' || inp.value === '') allFilled = false;
+    });
+    slot.classList.toggle('complete', allFilled);
+  }
+
+  // ---- text fields card glow ----
+  ['nombre','punto'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', function(){
+      el.closest('.card').classList.toggle('filled', el.value.trim().length > 0);
+      update();
+    });
+  });
+
+  // ---- summary totals ----
+  function sumGroup(prefix){
+    var total = 0;
+    document.querySelectorAll('.count-field[data-key^="' + prefix + '"] input').forEach(function(inp){
+      total += parseInt(inp.value) || 0;
+    });
+    return total;
+  }
+  function refreshSummary(){
+    var h = sumGroup('hombres_');
+    var w = sumGroup('mujeres_');
+    document.getElementById('sumHombres').textContent = h;
+    document.getElementById('sumMujeres').textContent = w;
+    document.getElementById('sumTotal').textContent = h + w;
+  }
+
+  // ---- progress + validation ----
+  var requiredSlots = ['slot-5a','slot-5b','slot-5c','slot-5d','slot-5e','slot-5f'];
+  var trackFill = document.getElementById('trackFill');
+  var trackPct = document.getElementById('trackPct');
+  var trackStops = document.getElementById('trackStops');
+  var totalSteps = 3 + 2 + requiredSlots.length; // nombre, fecha(implicit ok), circuito, punto, comparativa + slots
+  // simpler: build discrete checklist
+  var checklist = ['nombre','circuito','punto'].concat(requiredSlots).concat(['comparativa']);
+  checklist.forEach(function(){
+    var s = document.createElement('div');
+    s.className = 'track-stop';
+    trackStops.appendChild(s);
+  });
+  var stopEls = trackStops.querySelectorAll('.track-stop');
+
+  function isSlotFilled(id){
+    var slot = document.getElementById(id);
+    var inputs = slot.querySelectorAll('.stepper input');
+    var ok = true;
+    inputs.forEach(function(inp){
+      if(inp.dataset.touched !== '1' || inp.value === '') ok = false;
+    });
+    return ok;
+  }
+
+  function update(){
+    refreshSummary();
+    var nombreOk = document.getElementById('nombre').value.trim().length > 0;
+    var puntoOk = document.getElementById('punto').value.trim().length > 0;
+    var circuitoOk = circuitoVal !== '';
+    var comparativaOk = comparativaVal !== '';
+
+    var states = [nombreOk, circuitoOk, puntoOk];
+    requiredSlots.forEach(function(id){ states.push(isSlotFilled(id)); });
+    states.push(comparativaOk);
+
+    var doneCount = states.filter(Boolean).length;
+    var pct = Math.round((doneCount / states.length) * 100);
+    trackFill.style.width = pct + '%';
+    trackPct.textContent = pct + '%';
+
+    stopEls.forEach(function(el, i){
+      el.classList.toggle('done', states[i]);
+    });
+
+    var allOk = states.every(Boolean);
+    var btn = document.getElementById('btnSubmit');
+    btn.disabled = !allOk;
+    document.getElementById('helpText').textContent = allOk
+      ? 'Todo listo — revisa tus cifras y envía'
+      : 'Completa los campos marcados con * para enviar';
+  }
+
+  update();
+
+  // ---- submit: recolecta datos y envía a Google Sheets vía Apps Script ----
+
+  // Reemplaza esta URL por la de tu propio Web App (Implementar → Nueva implementación → Aplicación web)
+  var ENDPOINT_URL = 'https://script.google.com/macros/s/AKfycbwY-ZVF8-sEb1nNMX92wq6zxFpPi98xlvwRG6nS-CocVHbRQIkuRFIiMDl45tkX234/exec';
+
+  function getStepperValue(key){
+    var field = document.querySelector('.count-field[data-key="' + key + '"] input');
+    return field && field.dataset.touched === '1' ? (field.value || '0') : '';
+  }
+
+  function collectFormData(){
+    var diaV = diaSel.value, mesV = mesSel.value, anioV = anioSel.value;
+    var fecha = (diaV && mesV && anioV)
+      ? (String(diaV).padStart(2,'0') + '/' + String(mesV).padStart(2,'0') + '/' + anioV)
+      : '';
+
+    return {
+      nombre: document.getElementById('nombre').value.trim(),
+      fecha: fecha,
+      circuito: circuitoVal,
+      punto: document.getElementById('punto').value.trim(),
+      hombres_5: getStepperValue('hombres_5'),
+      mujeres_5: getStepperValue('mujeres_5'),
+      hombres_5a: getStepperValue('hombres_5a'),
+      mujeres_5a: getStepperValue('mujeres_5a'),
+      hombres_5b: getStepperValue('hombres_5b'),
+      mujeres_5b: getStepperValue('mujeres_5b'),
+      hombres_5c: getStepperValue('hombres_5c'),
+      mujeres_5c: getStepperValue('mujeres_5c'),
+      hombres_5d: getStepperValue('hombres_5d'),
+      mujeres_5d: getStepperValue('mujeres_5d'),
+      hombres_5e: getStepperValue('hombres_5e'),
+      mujeres_5e: getStepperValue('mujeres_5e'),
+      hombres_5f: getStepperValue('hombres_5f'),
+      mujeres_5f: getStepperValue('mujeres_5f'),
+      comparativa: comparativaVal,
+      aspecto: document.getElementById('aspecto').value.trim(),
+      comentario: document.getElementById('comentario').value.trim()
+    };
+  }
+
+  function showDone(){
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('trackBar').style.display = 'none';
+    document.getElementById('doneScreen').classList.add('show');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.getElementById('btnSubmit').addEventListener('click', function(){
+    var btn = this;
+    if(btn.disabled) return;
+
+    var payload = collectFormData();
+    var helpText = document.getElementById('helpText');
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    helpText.textContent = 'Guardando tu conteo, un momento...';
+    helpText.style.color = '';
+
+    fetch(ENDPOINT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS con Apps Script
+      body: JSON.stringify(payload)
+    })
+      .then(function(res){ return res.json(); })
+      .then(function(data){
+        if(data && data.status === 'ok'){
+          showDone();
+        } else {
+          throw new Error((data && data.message) || 'Error desconocido');
+        }
+      })
+      .catch(function(err){
+        btn.disabled = false;
+        btn.innerHTML = 'Enviar conteo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+        helpText.textContent = 'No se pudo enviar. Revisa tu conexión e intenta de nuevo.';
+        helpText.style.color = 'var(--red)';
+        console.error('Error al enviar conteo:', err);
+      });
+  });
+
+  document.getElementById('btnAnother').addEventListener('click', function(){
+    location.reload();
+  });
+
+})();
+</script>
+</body>
+</html>
